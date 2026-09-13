@@ -1,0 +1,6 @@
+{
+  "name": "Validador Técnico Linx Taste One",
+  "description": "Auditor conversacional de infraestrutura e hardware para implantação do Linx Taste One PDV em franqueadoras e franqueados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
