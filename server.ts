@@ -70,6 +70,7 @@ Se o cliente ainda não informou o produto, não emita diagnóstico e pergunte e
      * Finalidade/Fluxo da loja (Baixo, Médio ou Alto fluxo)
      * Sistema Operacional Android (Versão)
      * Processador (Quad-Core / Octa-Core) e RAM
+     * Periféricos, somente se o cliente optar por informá-los (campo opcional)
    
    - **Para Infraestrutura de Internet e Rede (OBRIGATÓRIO PARA TODOS):**
      * Conexão é cabeada (Ethernet) ou Wi-Fi?
@@ -83,6 +84,8 @@ Se o cliente ainda não informou o produto, não emita diagnóstico e pergunte e
    - Agradeça os dados já fornecidos.
    - Liste pontualmente APENAS as informações que ainda estão faltando.
    - Solicite que o usuário envie esses dados faltantes para prosseguir com a análise.
+   - Quando os dados vierem do formulário guiado, considere preenchidos todos os campos exibidos, incluindo monitor, conectividade, velocidade, segregação e gerenciamento de rede. Não solicite novamente essas informações.
+   - Periféricos são opcionais e nunca devem bloquear ou atrasar o diagnóstico.
 
 3. **CRITÉRIOS E BLOQUEIOS DE SEGURANÇA TÉCNICA (Com base no Documento Oficial):**
    - **Rede Wi-Fi ou 3G/4G/5G para operação de PDV/TEF/Fiscal:** Reprovar categoricamente e alertar sobre instabilidade e perda de conexão. A rede cabeada é OBRIGATÓRIA.

@@ -33,6 +33,7 @@ export const SpecBuilderModal: React.FC<SpecBuilderModalProps> = ({ isOpen, onCl
   const [netSpeed, setNetSpeed] = useState("50");
   const [netExclusive, setNetExclusive] = useState<"Exclusiva Linx" | "Compartilhada">("Exclusiva Linx");
   const [netRouter, setNetRouter] = useState<"Roteador Gerenciável (IP/MAC fixado)" | "Modem da Operadora">("Roteador Gerenciável (IP/MAC fixado)");
+  const [peripherals, setPeripherals] = useState("");
 
   if (!isOpen) return null;
 
@@ -90,6 +91,7 @@ export const SpecBuilderModal: React.FC<SpecBuilderModalProps> = ({ isOpen, onCl
     prompt += `- **Velocidade de Internet:** ${netSpeed} Mbps\n`;
     prompt += `- **Segregação de Banda:** ${netExclusive}\n`;
     prompt += `- **Gerenciamento de Rede:** ${netRouter}\n`;
+    prompt += `- **Periféricos:** ${peripherals.trim() || "Nenhum periférico informado"}\n`;
 
     onSubmit(prompt);
     onClose();
@@ -303,10 +305,28 @@ export const SpecBuilderModal: React.FC<SpecBuilderModalProps> = ({ isOpen, onCl
             )}
           </div>
 
+          {/* Section: Optional Peripherals */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <h3 className="font-bold text-slate-900 text-sm border-b border-slate-200 pb-2">
+              4. Periféricos (Opcional)
+            </h3>
+            <label className="block text-slate-700 font-medium" htmlFor="peripherals">
+              Informe impressora, pinpad, leitor, gaveta, balança ou outros equipamentos:
+            </label>
+            <textarea
+              id="peripherals"
+              value={peripherals}
+              onChange={(e) => setPeripherals(e.target.value)}
+              rows={3}
+              placeholder="Ex: Impressora Epson TM-T20x USB, pinpad Gertec PPC 930 e leitor de código de barras."
+              className="w-full resize-y p-2 text-xs border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+
           {/* Section: Network & Connectivity */}
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
             <h3 className="font-bold text-slate-900 text-sm border-b border-slate-200 pb-2">
-              3. Conectividade de Rede e Internet (Obrigatório)
+              5. Conectividade de Rede e Internet (Obrigatório)
             </h3>
 
             <div className="grid sm:grid-cols-2 gap-3">

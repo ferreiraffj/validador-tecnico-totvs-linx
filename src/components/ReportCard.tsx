@@ -40,13 +40,13 @@ export const ReportCard: React.FC<ReportCardProps> = ({ content }) => {
   };
 
   return (
-    <div className="my-4 rounded-xl border-2 bg-white shadow-xl overflow-hidden transition-all duration-300 print:m-0 print:border-none print:shadow-none ${
+    <div className={`my-4 rounded-xl border-2 bg-white shadow-xl overflow-hidden transition-all duration-300 print:m-0 print:border-none print:shadow-none ${
       statusType === 'APROVADO'
         ? 'border-emerald-500/80 ring-1 ring-emerald-500/20'
         : statusType === 'RESSALVAS'
         ? 'border-amber-500/80 ring-1 ring-amber-500/20'
         : 'border-rose-500/80 ring-1 ring-rose-500/20'
-    }">
+    }`}>
       {/* Header Banner */}
       <div
         className={`px-5 py-4 flex flex-wrap items-center justify-between gap-3 text-white ${

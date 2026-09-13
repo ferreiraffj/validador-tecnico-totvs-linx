@@ -15,7 +15,10 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message })
   // Check if content is a technical report
   const isReport =
     message.content.includes("# 📊 Diagnóstico de Viabilidade Técnica") ||
-    (message.content.includes("Diagnóstico de Viabilidade Técnica") && message.content.includes("Status Geral:"));
+    (message.content.includes("Diagnóstico de Viabilidade Técnica") && message.content.includes("Status Geral:")) ||
+    (message.content.includes("Status Geral:") &&
+      message.content.includes("Análise de Hardware") &&
+      message.content.includes("Plano de Ação"));
 
   // Check if message is notifying about missing fields (pendências)
   const isPendingWarning =
