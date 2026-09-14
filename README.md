@@ -73,6 +73,7 @@ Substitua a URL pelo repositório real. O arquivo `.env.example` pode ser public
 
 ```text
 GEMINI_API_KEY
+GEMINI_MODEL (opcional; padrão: `gemini-2.5-flash`)
 ```
 
 Cadastre a chave nos ambientes necessários (Production, Preview e Development).

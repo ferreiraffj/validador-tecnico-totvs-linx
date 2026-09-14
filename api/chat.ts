@@ -61,6 +61,9 @@ function fallbackReply(messages: ApiMessage[]): string {
   const text = messages.filter((message) => message.role === "user").map((message) => message.content).join("\n").toLowerCase();
   const systems = detectSystems(text);
   if (systems.length === 0) return "Antes da comparação, informe qual sistema será utilizado: **TasteOne PDV**, **TasteOne Autoatendimento** ou **Degust PDV**.";
+  if (messages.some((message) => message.images && message.images.length > 0)) {
+    return "Recebi as capturas de tela, mas a interpretação visual da IA está temporariamente indisponível. Não vou solicitar novamente os dados que podem estar nas imagens. Tente enviar a mensagem novamente ou informe os dados em texto para continuar sem a análise visual.";
+  }
   const missing: string[] = [];
   if (!/windows|android|sistema operacional|server/.test(text)) missing.push("sistema operacional e cenário da loja");
   if (!/processador|cpu|core|ryzen|xeon|quad|octa/.test(text)) missing.push("processador");
@@ -112,7 +115,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
     ]);
     const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       contents: messages.map((message) => ({
         role: message.role === "assistant" ? "model" : "user",
         parts: [
@@ -135,7 +138,13 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
       reply: response.text || fallbackReply(messages),
     });
   } catch (error) {
-    console.error("Error in /api/chat:", error);
+    console.error("Error in /api/chat:", {
+      message: error instanceof Error ? error.message : String(error),
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      hasApiKey: Boolean(process.env.GEMINI_API_KEY),
+      hasImages: isValidMessages(req.body?.messages) &&
+        req.body.messages.some((message) => Boolean(message.images?.length)),
+    });
 
     if (isValidMessages(req.body?.messages)) {
       return res.status(200).json({
