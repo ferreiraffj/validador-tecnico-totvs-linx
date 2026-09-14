@@ -1,0 +1,20 @@
+{
+  "system": "TasteOne Autoatendimento",
+  "version": "2026.09",
+  "android": {
+    "desktopOrSelfService": "Android 9 ou superior, Octa-Core 2.0 GHz ou superior, 4 GB RAM ou mais e 16 GB de armazenamento ou mais",
+    "approvedSelfService": "Sunmi K2 para alto fluxo, Sunmi K2 mini para médio fluxo e Gertec SK210 para baixo fluxo"
+  },
+  "network": {
+    "internetMinimumMbps": 15,
+    "wiredRequired": true,
+    "dedicatedRecommended": true,
+    "managedRouterRequired": true,
+    "simultaneousWifiAndEthernetForbidden": true
+  },
+  "homologatedDevices": [
+    "Sunmi K2",
+    "Sunmi K2 mini",
+    "Gertec SK210"
+  ]
+}

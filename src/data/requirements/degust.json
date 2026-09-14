@@ -1,0 +1,33 @@
+{
+  "system": "Degust PDV",
+  "version": "2026.09",
+  "windows": {
+    "serverMinimum": "Windows Server 2019 ou Windows 11 Pro 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 256 GB e Ethernet Gigabit",
+    "serverRecommended": "Intel Xeon ou AMD Ryzen com 8 núcleos ou mais, 16 GB RAM ou mais e SSD 512 GB ou superior",
+    "terminalMinimum": "Windows 10 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 128 GB, Ethernet Gigabit e monitor de 15 polegadas com 1366x768",
+    "terminalRecommended": "Windows 10 Pro 64 bits, Intel Core i7 7ª geração ou equivalente AMD, 12 GB RAM ou mais, SSD 512 GB ou superior, Ethernet Gigabit e monitor Full HD"
+  },
+  "android": {
+    "smartpos": "Android 7.1.1 ou superior, Quad-Core 1.8 GHz ou superior, 2 GB RAM ou mais e 8 GB de armazenamento ou mais",
+    "desktopOrSelfService": "Android 9 ou superior, Octa-Core 2.0 GHz ou superior, 4 GB RAM ou mais e 16 GB de armazenamento ou mais"
+  },
+  "network": {
+    "internetMinimumMbps": 15,
+    "wiredRequired": true,
+    "dedicatedRecommended": true,
+    "managedRouterRequired": true,
+    "simultaneousWifiAndEthernetForbidden": true
+  },
+  "homologatedDevices": [
+    "Sunmi P3",
+    "Positivo L400",
+    "Sunmi P2 A11",
+    "Sunmi T2S",
+    "Sunmi T2 mini",
+    "Gertec GS300",
+    "Sunmi D2 mini",
+    "Sunmi K2",
+    "Sunmi K2 mini",
+    "Gertec SK210"
+  ]
+}
