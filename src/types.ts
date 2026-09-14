@@ -15,6 +15,13 @@ export interface Message {
   isReport?: boolean;
   reportStatus?: "APROVADO" | "APROVADO_RESSALVAS" | "REPROVADO";
   missingFields?: string[];
+  images?: ImageAttachment[];
+}
+
+export interface ImageAttachment {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
 }
 
 export interface HardwarePreset {

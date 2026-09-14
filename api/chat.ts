@@ -34,7 +34,12 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
       model: "gemini-3.5-flash-lite",
       contents: messages.map((message) => ({
         role: message.role === "assistant" ? "model" : "user",
-        parts: [{ text: message.content }],
+        parts: [
+          { text: message.content },
+          ...(message.images ?? []).map((image) => ({
+            inlineData: { mimeType: image.mimeType, data: image.dataUrl.split(",", 2)[1] },
+          })),
+        ],
       })),
       config: {
         systemInstruction: buildSystemInstruction(systems[0] as SupportedSystem),

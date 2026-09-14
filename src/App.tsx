@@ -3,7 +3,7 @@ import { Header } from "./components/Header";
 import { ChatInterface } from "./components/ChatInterface";
 import { DocumentationDrawer } from "./components/DocumentationDrawer";
 import { SpecBuilderModal } from "./components/SpecBuilderModal";
-import { Message, HardwarePreset } from "./types";
+import { ImageAttachment, Message, HardwarePreset } from "./types";
 
 const CHAT_STORAGE_KEY = "linx-taste-one:recent-chat";
 
@@ -65,11 +65,12 @@ export default function App() {
     }
   }, [messages]);
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, images: ImageAttachment[] = []) => {
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
       content: text,
+      images: images.length > 0 ? images : undefined,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
@@ -82,6 +83,7 @@ export default function App() {
       const payload = updatedMessages.map((m) => ({
         role: m.role,
         content: m.content,
+        ...(m.images ? { images: m.images } : {}),
       }));
 
       const res = await fetch("/api/chat", {

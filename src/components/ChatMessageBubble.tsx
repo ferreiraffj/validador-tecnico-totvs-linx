@@ -66,6 +66,13 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message })
         )}
 
         {/* Message Content */}
+        {message.images && message.images.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {message.images.map((image, index) => (
+              <img key={`${image.name}-${index}`} src={image.dataUrl} alt={image.name} className="max-w-[220px] max-h-40 rounded-lg border border-white/30 object-contain" />
+            ))}
+          </div>
+        )}
         {isReport ? (
           <ReportCard content={message.content} />
         ) : (

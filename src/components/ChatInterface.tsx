@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Message, HardwarePreset } from "../types";
+import { ImageAttachment, Message, HardwarePreset } from "../types";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { SAMPLE_SCENARIOS } from "../data/sampleScenarios";
-import { Send, Sparkles, AlertCircle, RefreshCw, Layers, ShieldCheck, ChevronRight } from "lucide-react";
+import { Send, RefreshCw, Layers, ShieldCheck, ChevronRight, ImagePlus, X } from "lucide-react";
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (text: string) => Promise<void>;
+  onSendMessage: (text: string, images?: ImageAttachment[]) => Promise<void>;
   isLoading: boolean;
   onOpenWizard: () => void;
   onSelectPreset: (preset: HardwarePreset) => void;
@@ -20,8 +20,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSelectPreset,
 }) => {
   const [input, setInput] = useState("");
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,9 +42,41 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSubmit = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    if ((!trimmed && images.length === 0) || isLoading) return;
     setInput("");
-    await onSendMessage(trimmed);
+    const selectedImages = images;
+    setImages([]);
+    await onSendMessage(trimmed || "Analise as imagens anexadas e extraia as especificações técnicas visíveis.", selectedImages);
+  };
+
+  const handleImageSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    const imageFiles = files.filter((file) => ["image/png", "image/jpeg", "image/webp"].includes(file.type)).slice(0, 4);
+    const loadedImages = await Promise.all(
+      imageFiles.map(
+        (file) =>
+          new Promise<ImageAttachment>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const image = new Image();
+              image.onload = () => {
+                const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+                canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+                canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+                resolve({ name: file.name, mimeType: "image/jpeg", dataUrl: canvas.toDataURL("image/jpeg", 0.72) });
+              };
+              image.onerror = () => reject(new Error(`Não foi possível processar ${file.name}.`));
+              image.src = String(reader.result);
+            };
+            reader.onerror = () => reject(new Error(`Não foi possível ler ${file.name}.`));
+            reader.readAsDataURL(file);
+          }),
+      ),
+    );
+    setImages((current) => [...current, ...loadedImages].slice(0, 4));
+    event.target.value = "";
   };
 
   return (
@@ -140,6 +174,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             className="flex items-end gap-2"
           >
             <div className="relative flex-1">
+              {images.length > 0 && (
+                <div className="flex gap-2 mb-2 overflow-x-auto">
+                  {images.map((image, index) => (
+                    <div key={`${image.name}-${index}`} className="relative shrink-0">
+                      <img src={image.dataUrl} alt={`Anexo ${image.name}`} className="w-14 h-14 object-cover rounded-lg border border-slate-300" />
+                      <button
+                        type="button"
+                        onClick={() => setImages((current) => current.filter((_, imageIndex) => imageIndex !== index))}
+                        className="absolute -top-1.5 -right-1.5 rounded-full bg-slate-800 text-white p-0.5"
+                        title="Remover imagem"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -152,9 +203,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               />
             </div>
 
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="hidden" onChange={handleImageSelection} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || images.length >= 4}
+              className="h-12 w-12 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center disabled:opacity-40"
+              title="Anexar capturas de tela"
+            >
+              <ImagePlus className="w-4 h-4" />
+            </button>
             <button
               type="submit"
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && images.length === 0) || isLoading}
               className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center justify-center gap-1.5 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               title="Enviar mensagem para o auditor"
             >
@@ -164,7 +225,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </form>
 
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-            <span>Pressione <strong>Enter</strong> para enviar, <strong>Shift+Enter</strong> para nova linha</span>
+            <span>Você pode anexar até 4 capturas PNG, JPG ou WebP. Informe o sistema junto com as imagens.</span>
             <button
               onClick={onOpenWizard}
               className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"

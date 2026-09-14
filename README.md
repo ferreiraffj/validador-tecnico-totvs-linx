@@ -2,6 +2,10 @@
 
 Aplicação web para coleta e validação da infraestrutura de lojas para os sistemas TasteOne PDV, TasteOne Autoatendimento e Degust PDV.
 
+## Documentação técnica
+
+Para entender a arquitetura, o fluxo de auditoria, os contratos da API, a integração multimodal, a organização dos diretórios e os procedimentos de manutenção, consulte [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
 ## Desenvolvimento local
 
 Pré-requisito: Node.js 20 ou superior.
@@ -18,6 +22,14 @@ npm.cmd run dev
 ```
 
 A aplicação ficará disponível em <http://localhost:3000/>.
+
+### Interpretação de imagens
+
+No chat, use o botão de imagem para anexar até quatro capturas de tela em PNG, JPG ou WebP. O auditor pode interpretar telas de informações do Windows, como sistema operacional, processador, memória, armazenamento e testes de internet. Informe também o sistema escolhido na mensagem, pois a imagem não substitui essa seleção.
+
+As imagens são redimensionadas e convertidas no navegador antes do envio. Elas são encaminhadas somente junto à solicitação atual e podem permanecer temporariamente no `localStorage` do navegador junto com o histórico recente. Não são armazenadas no servidor.
+
+As imagens em `documentacao-de-requisitos/exemplos-especificacoes-windows` servem como referência para os tipos de evidência que o usuário pode enviar; elas não são carregadas pela API nem usadas como treinamento a cada requisição.
 
 Validações e build:
 

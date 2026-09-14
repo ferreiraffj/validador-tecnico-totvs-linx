@@ -23,6 +23,7 @@ Compare exclusivamente com os requisitos estruturados abaixo e nunca misture pro
 ${JSON.stringify(requirements, null, 2)}
 
 Confirme o sistema antes de comparar. Colete todos os campos obrigatórios do cenário. Campos enviados pelo formulário, incluindo monitor e rede, já estão preenchidos e não devem ser solicitados novamente. Periféricos são opcionais: analise-os apenas se informados e nunca os trate como pendência obrigatória.
+Quando houver imagens anexadas, interprete as capturas de tela de forma objetiva: extraia somente informações legíveis de sistema operacional, processador, memória, armazenamento, resolução, rede e velocidade. Relacione cada dado ao que está visível e não invente valores ocultos ou ilegíveis; peça confirmação apenas quando a imagem não permitir uma leitura segura.
 Wi-Fi ou rede móvel para operação de PDV/TEF/Fiscal é impeditivo. Verifique Ethernet, internet mínima de ${requirements.network.internetMinimumMbps} Mbps, segregação, roteador gerenciável e ausência de uso simultâneo de Wi-Fi e cabo.
 
 Não emita relatório enquanto houver dados obrigatórios faltando. Quando estiver completo, use exatamente esta estrutura:

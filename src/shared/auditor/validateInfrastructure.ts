@@ -1,19 +1,41 @@
-export type AuditMessage = { role: "user" | "assistant"; content: string };
+export type ImageAttachment = { name: string; mimeType: string; dataUrl: string };
+export type AuditMessage = { role: "user" | "assistant"; content: string; images?: ImageAttachment[] };
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const MAX_IMAGE_SIZE = 2_500_000;
 
 export function validateMessages(messages: unknown): messages is AuditMessage[] {
   return (
     Array.isArray(messages) &&
     messages.length > 0 &&
     messages.length <= 40 &&
-    messages.every(
-      (message) =>
-        !!message &&
-        typeof message === "object" &&
-        ((message as AuditMessage).role === "user" || (message as AuditMessage).role === "assistant") &&
-        typeof (message as AuditMessage).content === "string" &&
-        (message as AuditMessage).content.trim().length > 0 &&
-        (message as AuditMessage).content.length <= 8000,
-    )
+    messages.every((message) => {
+      if (
+        !message ||
+        typeof message !== "object" ||
+        ((message as AuditMessage).role !== "user" && (message as AuditMessage).role !== "assistant") ||
+        typeof (message as AuditMessage).content !== "string" ||
+        (message as AuditMessage).content.trim().length === 0 ||
+        (message as AuditMessage).content.length > 8000
+      ) {
+        return false;
+      }
+
+      const images = (message as AuditMessage).images;
+      return (
+        images === undefined ||
+        (Array.isArray(images) &&
+          images.length <= 4 &&
+          images.every(
+            (image) =>
+              typeof image?.name === "string" &&
+              ALLOWED_IMAGE_TYPES.has(image?.mimeType) &&
+              typeof image?.dataUrl === "string" &&
+              image.dataUrl.startsWith(`data:${image.mimeType};base64,`) &&
+              image.dataUrl.length <= MAX_IMAGE_SIZE,
+          ))
+      );
+    })
   );
 }
 
