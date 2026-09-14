@@ -20,6 +20,7 @@ type ApiResponse = {
 
 const SYSTEM_NAMES = ["TasteOne PDV", "TasteOne Autoatendimento", "Degust PDV"] as const;
 type SupportedSystem = (typeof SYSTEM_NAMES)[number];
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 function detectSystems(text: string): SupportedSystem[] {
   const normalized = text.toLowerCase();
@@ -57,6 +58,11 @@ function isValidMessages(messages: unknown): messages is ApiMessage[] {
   });
 }
 
+function getGeminiModel(): string {
+  const configuredModel = process.env.GEMINI_MODEL?.trim();
+  return configuredModel && /^gemini-[a-z0-9.-]+$/i.test(configuredModel) ? configuredModel : DEFAULT_MODEL;
+}
+
 function fallbackReply(messages: ApiMessage[]): string {
   const text = messages.filter((message) => message.role === "user").map((message) => message.content).join("\n").toLowerCase();
   const systems = detectSystems(text);
@@ -64,6 +70,7 @@ function fallbackReply(messages: ApiMessage[]): string {
   if (messages.some((message) => message.images && message.images.length > 0)) {
     return "Recebi as capturas de tela, mas a interpretação visual da IA está temporariamente indisponível. Não vou solicitar novamente os dados que podem estar nas imagens. Tente enviar a mensagem novamente ou informe os dados em texto para continuar sem a análise visual.";
   }
+
   const missing: string[] = [];
   if (!/windows|android|sistema operacional|server/.test(text)) missing.push("sistema operacional e cenário da loja");
   if (!/processador|cpu|core|ryzen|xeon|quad|octa/.test(text)) missing.push("processador");
@@ -111,11 +118,14 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
 
     const [{ GoogleGenAI }, promptModule] = await Promise.all([
       import("@google/genai"),
-      import("../src/shared/auditor/buildPrompt"),
+      import("../src/shared/auditor/buildPrompt").catch((error) => {
+        console.error("Could not load shared auditor prompt:", error);
+        return null;
+      }),
     ]);
     const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await client.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: getGeminiModel(),
       contents: messages.map((message) => ({
         role: message.role === "assistant" ? "model" : "user",
         parts: [
@@ -129,7 +139,9 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
         ],
       })),
       config: {
-        systemInstruction: promptModule.buildSystemInstruction(systems[0]),
+        systemInstruction:
+          promptModule?.buildSystemInstruction(systems[0]) ||
+          `Você é um auditor técnico do sistema ${systems[0]}. Analise os dados de hardware, sistema operacional, rede e imagens anexadas sem inventar informações.`,
         temperature: 0.2,
       },
     });
@@ -140,7 +152,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
   } catch (error) {
     console.error("Error in /api/chat:", {
       message: error instanceof Error ? error.message : String(error),
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: getGeminiModel(),
       hasApiKey: Boolean(process.env.GEMINI_API_KEY),
       hasImages: isValidMessages(req.body?.messages) &&
         req.body.messages.some((message) => Boolean(message.images?.length)),
@@ -150,7 +162,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
       return res.status(200).json({
         reply: fallbackReply(req.body.messages),
         isFallback: true,
-        warning: "O serviço de IA está temporariamente indisponível; a validação local foi utilizada.",
+        warning: "A análise visual não foi concluída nesta tentativa. Tente enviar novamente.",
       });
     }
 
