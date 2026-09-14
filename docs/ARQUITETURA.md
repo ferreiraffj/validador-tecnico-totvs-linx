@@ -228,7 +228,7 @@ Não se deve adicionar ou manter outro gerenciador de pacotes sem uma decisão e
 
 8. O Gemini interpreta a imagem de acordo com a instrução do produto escolhido.
 
-O projeto aceita até quatro imagens por mensagem. A validação rejeita tipos não permitidos, Data URLs inválidos, mensagens excessivas e imagens acima do limite.
+O projeto aceita até três imagens por mensagem. Cada imagem tem limite de aproximadamente 1 MB e o conjunto da mensagem tem limite de aproximadamente 3 MB. A validação rejeita tipos não permitidos, Data URLs inválidos, mensagens excessivas e imagens acima dos limites.
 
 ### 5.4 Seleção do produto
 
@@ -606,4 +606,3 @@ Confira formato, quantidade e tamanho. A seleção converte a imagem para JPEG, 
 - **Fallback:** comportamento alternativo quando o serviço principal não está disponível.
 - **Matriz de requisitos:** JSON estruturado que representa os critérios técnicos de um produto.
 - **HMR:** atualização da aplicação no navegador sem reiniciar manualmente o servidor durante o desenvolvimento.
-

@@ -25,7 +25,7 @@ A aplicação ficará disponível em <http://localhost:3000/>.
 
 ### Interpretação de imagens
 
-No chat, use o botão de imagem para anexar até quatro capturas de tela em PNG, JPG ou WebP. O auditor pode interpretar telas de informações do Windows, como sistema operacional, processador, memória, armazenamento e testes de internet. Informe também o sistema escolhido na mensagem, pois a imagem não substitui essa seleção.
+No chat, use o botão de imagem para anexar até três capturas de tela em PNG, JPG ou WebP. O auditor pode interpretar telas de informações do Windows, como sistema operacional, processador, memória, armazenamento e testes de internet. Informe também o sistema escolhido na mensagem, pois a imagem não substitui essa seleção.
 
 As imagens são redimensionadas e convertidas no navegador antes do envio. Elas são encaminhadas somente junto à solicitação atual e podem permanecer temporariamente no `localStorage` do navegador junto com o histórico recente. Não são armazenadas no servidor.
 

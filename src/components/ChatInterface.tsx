@@ -51,7 +51,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleImageSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    const imageFiles = files.filter((file) => ["image/png", "image/jpeg", "image/webp"].includes(file.type)).slice(0, 4);
+    const imageFiles = files.filter((file) => ["image/png", "image/jpeg", "image/webp"].includes(file.type)).slice(0, 3);
     const loadedImages = await Promise.all(
       imageFiles.map(
         (file) =>
@@ -60,12 +60,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             reader.onload = () => {
               const image = new Image();
               image.onload = () => {
-                const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+                const scale = Math.min(1, 1024 / Math.max(image.naturalWidth, image.naturalHeight));
                 const canvas = document.createElement("canvas");
                 canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
                 canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
                 canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
-                resolve({ name: file.name, mimeType: "image/jpeg", dataUrl: canvas.toDataURL("image/jpeg", 0.72) });
+                resolve({ name: file.name, mimeType: "image/jpeg", dataUrl: canvas.toDataURL("image/jpeg", 0.65) });
               };
               image.onerror = () => reject(new Error(`Não foi possível processar ${file.name}.`));
               image.src = String(reader.result);
@@ -75,7 +75,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }),
       ),
     );
-    setImages((current) => [...current, ...loadedImages].slice(0, 4));
+    setImages((current) => [...current, ...loadedImages].slice(0, 3));
     event.target.value = "";
   };
 
@@ -207,7 +207,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading || images.length >= 4}
+              disabled={isLoading || images.length >= 3}
               className="h-12 w-12 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center disabled:opacity-40"
               title="Anexar capturas de tela"
             >
@@ -225,7 +225,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </form>
 
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-            <span>Você pode anexar até 4 capturas PNG, JPG ou WebP. Informe o sistema junto com as imagens.</span>
+            <span>Você pode anexar até 3 capturas PNG, JPG ou WebP. Informe o sistema junto com as imagens.</span>
             <button
               onClick={onOpenWizard}
               className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"

@@ -2,7 +2,8 @@ export type ImageAttachment = { name: string; mimeType: string; dataUrl: string 
 export type AuditMessage = { role: "user" | "assistant"; content: string; images?: ImageAttachment[] };
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-const MAX_IMAGE_SIZE = 2_500_000;
+const MAX_IMAGE_SIZE = 1_000_000;
+const MAX_TOTAL_IMAGE_SIZE = 3_000_000;
 
 export function validateMessages(messages: unknown): messages is AuditMessage[] {
   return (
@@ -25,7 +26,9 @@ export function validateMessages(messages: unknown): messages is AuditMessage[] 
       return (
         images === undefined ||
         (Array.isArray(images) &&
-          images.length <= 4 &&
+          images.length <= 3 &&
+          images.reduce((total, image) => total + (typeof image?.dataUrl === "string" ? image.dataUrl.length : 0), 0) <=
+            MAX_TOTAL_IMAGE_SIZE &&
           images.every(
             (image) =>
               typeof image?.name === "string" &&

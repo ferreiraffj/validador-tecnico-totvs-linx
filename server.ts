@@ -17,7 +17,7 @@ export function healthHandler(_req: Request, res: Response) {
 
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: "512kb" }));
+  app.use(express.json({ limit: "4mb" }));
   app.get("/api/health", healthHandler);
   app.post("/api/chat", (req, res) => chatServerlessHandler(req, res));
 

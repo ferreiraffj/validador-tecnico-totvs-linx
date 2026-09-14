@@ -80,10 +80,14 @@ export default function App() {
 
     try {
       // Build conversation payload
-      const payload = updatedMessages.map((m) => ({
+      const lastImageMessageIndex = updatedMessages.reduce(
+        (lastIndex, message, index) => (message.images && message.images.length > 0 ? index : lastIndex),
+        -1,
+      );
+      const payload = updatedMessages.map((m, index) => ({
         role: m.role,
         content: m.content,
-        ...(m.images ? { images: m.images } : {}),
+        ...(m.images && index === lastImageMessageIndex ? { images: m.images } : {}),
       }));
 
       const res = await fetch("/api/chat", {
