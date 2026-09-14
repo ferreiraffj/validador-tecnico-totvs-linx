@@ -1,5 +1,3 @@
-import { buildSystemInstruction } from "../src/shared/auditor/buildPrompt";
-
 type ApiMessage = {
   role: "user" | "assistant";
   content: string;
@@ -23,6 +21,70 @@ type ApiResponse = {
 const SYSTEM_NAMES = ["TasteOne PDV", "TasteOne Autoatendimento", "Degust PDV"] as const;
 type SupportedSystem = (typeof SYSTEM_NAMES)[number];
 const DEFAULT_MODEL = "gemini-3.6-flash";
+const REQUIREMENTS: Record<SupportedSystem, Record<string, unknown>> = {
+  "TasteOne PDV": {
+    system: "TasteOne PDV",
+    version: "2026.09",
+    windows: {
+      serverMinimum: "Windows Server 2019 ou Windows 11 Pro 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 256 GB e Ethernet Gigabit",
+      serverRecommended: "Intel Xeon ou AMD Ryzen com 8 núcleos ou mais, 16 GB RAM ou mais e SSD 512 GB ou superior",
+      terminalMinimum: "Windows 10 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 128 GB, Ethernet Gigabit e monitor de 15 polegadas com 1366x768",
+      terminalRecommended: "Windows 10 Pro 64 bits, Intel Core i7 7ª geração ou equivalente AMD, 12 GB RAM ou mais, SSD 512 GB ou superior, Ethernet Gigabit e monitor Full HD",
+    },
+    android: {
+      smartpos: "Android 7.1.1 ou superior, Quad-Core 1.8 GHz ou superior, 2 GB RAM ou mais e 8 GB de armazenamento ou mais",
+      desktopOrSelfService: "Android 9 ou superior, Octa-Core 2.0 GHz ou superior, 4 GB RAM ou mais e 16 GB de armazenamento ou mais",
+    },
+    network: { internetMinimumMbps: 15, wiredRequired: true, dedicatedRecommended: true, managedRouterRequired: true },
+    homologatedDevices: ["Sunmi P3", "Tectoy T8", "Clover Flex", "Gertec GPOS 790", "Positivo L400", "Sunmi T2S", "Clover Mini", "Gertec GS300", "Sunmi K2", "Sunmi K2 mini", "Gertec SK210"],
+  },
+  "TasteOne Autoatendimento": {
+    system: "TasteOne Autoatendimento",
+    version: "2026.09",
+    android: {
+      desktopOrSelfService: "Android 9 ou superior, Octa-Core 2.0 GHz ou superior, 4 GB RAM ou mais e 16 GB de armazenamento ou mais",
+      approvedSelfService: "Sunmi K2 para alto fluxo, Sunmi K2 mini para médio fluxo e Gertec SK210 para baixo fluxo",
+    },
+    network: { internetMinimumMbps: 15, wiredRequired: true, dedicatedRecommended: true, managedRouterRequired: true },
+    homologatedDevices: ["Sunmi K2", "Sunmi K2 mini", "Gertec SK210"],
+  },
+  "Degust PDV": {
+    system: "Degust PDV",
+    version: "2026.09",
+    windows: {
+      serverMinimum: "Windows Server 2019 ou Windows 11 Pro 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 256 GB e Ethernet Gigabit",
+      serverRecommended: "Intel Xeon ou AMD Ryzen com 8 núcleos ou mais, 16 GB RAM ou mais e SSD 512 GB ou superior",
+      terminalMinimum: "Windows 10 64 bits, Intel Core i5 7ª geração ou equivalente AMD, 8 GB RAM, SSD 128 GB, Ethernet Gigabit e monitor de 15 polegadas com 1366x768",
+      terminalRecommended: "Windows 10 Pro 64 bits, Intel Core i7 7ª geração ou equivalente AMD, 12 GB RAM ou mais, SSD 512 GB ou superior, Ethernet Gigabit e monitor Full HD",
+    },
+    android: {
+      smartpos: "Android 7.1.1 ou superior, Quad-Core 1.8 GHz ou superior, 2 GB RAM ou mais e 8 GB de armazenamento ou mais",
+      desktopOrSelfService: "Android 9 ou superior, Octa-Core 2.0 GHz ou superior, 4 GB RAM ou mais e 16 GB de armazenamento ou mais",
+    },
+    network: { internetMinimumMbps: 15, wiredRequired: true, dedicatedRecommended: true, managedRouterRequired: true },
+    homologatedDevices: ["Sunmi P3", "Positivo L400", "Sunmi P2 A11", "Sunmi T2S", "Sunmi T2 mini", "Gertec GS300", "Sunmi D2 mini", "Sunmi K2", "Sunmi K2 mini", "Gertec SK210"],
+  },
+};
+
+function buildProductionPrompt(system: SupportedSystem): string {
+  const requirements = REQUIREMENTS[system];
+  const network = requirements.network as { internetMinimumMbps: number };
+  return `Você é o Validador Técnico de Infraestrutura e Hardware do sistema ${system}.
+Compare exclusivamente com os requisitos estruturados abaixo e nunca misture produtos:
+${JSON.stringify(requirements, null, 2)}
+
+Confirme o sistema antes de comparar. Campos enviados pelo formulário, incluindo monitor e rede, já estão preenchidos e não devem ser solicitados novamente. Periféricos são opcionais.
+Quando houver imagens, extraia somente informações legíveis de sistema operacional, processador, memória, armazenamento, resolução, rede e velocidade. Não invente valores ilegíveis.
+Wi-Fi ou rede móvel para operação de PDV/TEF/Fiscal é impeditivo. Verifique Ethernet, internet mínima de ${network.internetMinimumMbps} Mbps, segregação e roteador gerenciável.
+
+Não emita relatório enquanto houver dados obrigatórios faltando. Quando estiver completo, use exatamente:
+# 📊 Diagnóstico de Viabilidade Técnica - [sistema]
+**Status Geral:** [🟢 APROVADO / 🟡 APROVADO COM RESSALVAS / 🔴 REPROVADO - IMPEDITIVO]
+### 1. Análise de Hardware e Equipamentos
+### 2. Análise de Infraestrutura e Rede
+### 3. Periféricos e Homologações (Se aplicável)
+### 4. Plano de Ação / Correções Necessárias`;
+}
 
 function detectSystems(text: string): SupportedSystem[] {
   const normalized = text.toLowerCase();
@@ -62,7 +124,8 @@ function isValidMessages(messages: unknown): messages is ApiMessage[] {
 
 function getGeminiModel(): string {
   const configuredModel = process.env.GEMINI_MODEL?.trim();
-  return configuredModel && /^gemini-[a-z0-9.-]+$/i.test(configuredModel) ? configuredModel : DEFAULT_MODEL;
+  if (!configuredModel || configuredModel === "gemini-2.5-flash") return DEFAULT_MODEL;
+  return /^gemini-[a-z0-9.-]+$/i.test(configuredModel) ? configuredModel : DEFAULT_MODEL;
 }
 
 function fallbackReply(messages: ApiMessage[]): string {
@@ -135,7 +198,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
         ],
       })),
       config: {
-        systemInstruction: buildSystemInstruction(systems[0]),
+        systemInstruction: buildProductionPrompt(systems[0]),
         temperature: 0.2,
       },
     });
