@@ -1,3 +1,5 @@
+import { buildSystemInstruction } from "../src/shared/auditor/buildPrompt";
+
 type ApiMessage = {
   role: "user" | "assistant";
   content: string;
@@ -20,7 +22,7 @@ type ApiResponse = {
 
 const SYSTEM_NAMES = ["TasteOne PDV", "TasteOne Autoatendimento", "Degust PDV"] as const;
 type SupportedSystem = (typeof SYSTEM_NAMES)[number];
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-3.6-flash";
 
 function detectSystems(text: string): SupportedSystem[] {
   const normalized = text.toLowerCase();
@@ -116,13 +118,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
       });
     }
 
-    const [{ GoogleGenAI }, promptModule] = await Promise.all([
-      import("@google/genai"),
-      import("../src/shared/auditor/buildPrompt").catch((error) => {
-        console.error("Could not load shared auditor prompt:", error);
-        return null;
-      }),
-    ]);
+    const { GoogleGenAI } = await import("@google/genai");
     const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await client.models.generateContent({
       model: getGeminiModel(),
@@ -139,9 +135,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
         ],
       })),
       config: {
-        systemInstruction:
-          promptModule?.buildSystemInstruction(systems[0]) ||
-          `Você é um auditor técnico do sistema ${systems[0]}. Analise os dados de hardware, sistema operacional, rede e imagens anexadas sem inventar informações.`,
+        systemInstruction: buildSystemInstruction(systems[0]),
         temperature: 0.2,
       },
     });
