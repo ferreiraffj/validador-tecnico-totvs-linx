@@ -18,20 +18,67 @@ type ApiResponse = {
   json: (body: unknown) => void;
 };
 
+const SYSTEM_NAMES = ["TasteOne PDV", "TasteOne Autoatendimento", "Degust PDV"] as const;
+type SupportedSystem = (typeof SYSTEM_NAMES)[number];
+
+function detectSystems(text: string): SupportedSystem[] {
+  const normalized = text.toLowerCase();
+  const systems: SupportedSystem[] = [];
+  if (normalized.includes("tasteone pdv") || normalized.includes("taste one pdv")) systems.push("TasteOne PDV");
+  if (normalized.includes("tasteone autoatendimento") || normalized.includes("taste one autoatendimento")) {
+    systems.push("TasteOne Autoatendimento");
+  }
+  if (normalized.includes("degust pdv") || normalized.includes("degust")) systems.push("Degust PDV");
+  return systems;
+}
+
+function isValidMessages(messages: unknown): messages is ApiMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 40) return false;
+  return messages.every((message) => {
+    if (
+      !message ||
+      typeof message !== "object" ||
+      (message as ApiMessage).role !== "user" && (message as ApiMessage).role !== "assistant" ||
+      typeof (message as ApiMessage).content !== "string" ||
+      (message as ApiMessage).content.trim().length === 0 ||
+      (message as ApiMessage).content.length > 8000
+    ) return false;
+    const images = (message as ApiMessage).images;
+    return images === undefined || (
+      Array.isArray(images) &&
+      images.length <= 3 &&
+      images.reduce((total, image) => total + (image.dataUrl?.length ?? 0), 0) <= 3_000_000 &&
+      images.every((image) =>
+        ["image/png", "image/jpeg", "image/webp"].includes(image.mimeType) &&
+        image.dataUrl.startsWith(`data:${image.mimeType};base64,`) &&
+        image.dataUrl.length <= 1_000_000
+      )
+    );
+  });
+}
+
+function fallbackReply(messages: ApiMessage[]): string {
+  const text = messages.filter((message) => message.role === "user").map((message) => message.content).join("\n").toLowerCase();
+  const systems = detectSystems(text);
+  if (systems.length === 0) return "Antes da comparação, informe qual sistema será utilizado: **TasteOne PDV**, **TasteOne Autoatendimento** ou **Degust PDV**.";
+  const missing: string[] = [];
+  if (!/windows|android|sistema operacional|server/.test(text)) missing.push("sistema operacional e cenário da loja");
+  if (!/processador|cpu|core|ryzen|xeon|quad|octa/.test(text)) missing.push("processador");
+  if (!/ram|memória|memoria|\d+\s*gb/.test(text)) missing.push("memória RAM");
+  if (!/ssd|hd|armazenamento|disco/.test(text)) missing.push("armazenamento");
+  if (!/cabo|cabeada|ethernet|wi-?fi|wifi/.test(text)) missing.push("conectividade de rede");
+  if (!/mbps|mega|velocidade/.test(text)) missing.push("velocidade da internet");
+  if (missing.length > 0) return `Para emitir o diagnóstico, ainda faltam:\n\n${missing.map((item, index) => `${index + 1}. **${item}**`).join("\n")}`;
+  return "Os dados mínimos foram recebidos. A configuração atende aos campos necessários para comparação com os requisitos do sistema escolhido.";
+}
+
 export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido. Use POST com um corpo JSON." });
   }
 
   try {
-    const [{ GoogleGenAI }, promptModule, fallbackModule, validationModule] = await Promise.all([
-      import("@google/genai"),
-      import("../src/shared/auditor/buildPrompt"),
-      import("../src/shared/auditor/fallbackResponse"),
-      import("../src/shared/auditor/validateInfrastructure"),
-    ]);
-
-    if (!validationModule.validateMessages(req.body?.messages)) {
+    if (!isValidMessages(req.body?.messages)) {
       return res.status(400).json({ error: "Mensagens inválidas ou payload de imagem excedido." });
     }
 
@@ -40,7 +87,7 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
       .filter((message) => message.role === "user")
       .map((message) => message.content)
       .join("\n");
-    const systems = promptModule.detectSystems(userText);
+    const systems = detectSystems(userText);
 
     if (systems.length !== 1) {
       return res.status(200).json({
@@ -54,11 +101,15 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
 
     if (!process.env.GEMINI_API_KEY) {
       return res.status(200).json({
-        reply: fallbackModule.fallbackResponse(messages),
+        reply: fallbackReply(messages),
         isFallback: true,
       });
     }
 
+    const [{ GoogleGenAI }, promptModule] = await Promise.all([
+      import("@google/genai"),
+      import("../src/shared/auditor/buildPrompt"),
+    ]);
     const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await client.models.generateContent({
       model: "gemini-3.5-flash-lite",
@@ -81,26 +132,17 @@ export default async function chatHandler(req: ApiRequest, res: ApiResponse) {
     });
 
     return res.status(200).json({
-      reply: response.text || fallbackModule.fallbackResponse(messages),
+      reply: response.text || fallbackReply(messages),
     });
   } catch (error) {
     console.error("Error in /api/chat:", error);
 
-    try {
-      const [{ fallbackResponse }, { validateMessages }] = await Promise.all([
-        import("../src/shared/auditor/fallbackResponse"),
-        import("../src/shared/auditor/validateInfrastructure"),
-      ]);
-
-      if (validateMessages(req.body?.messages)) {
-        return res.status(200).json({
-          reply: fallbackResponse(req.body.messages),
-          isFallback: true,
-          warning: "O serviço de IA está temporariamente indisponível; a validação local foi utilizada.",
-        });
-      }
-    } catch (fallbackError) {
-      console.error("Fallback error in /api/chat:", fallbackError);
+    if (isValidMessages(req.body?.messages)) {
+      return res.status(200).json({
+        reply: fallbackReply(req.body.messages),
+        isFallback: true,
+        warning: "O serviço de IA está temporariamente indisponível; a validação local foi utilizada.",
+      });
     }
 
     return res.status(500).json({ error: "Não foi possível processar a solicitação de auditoria." });
